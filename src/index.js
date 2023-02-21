@@ -1,6 +1,8 @@
 import ImgApiService from './ImagesApi';
 import LoadMoreBtn from './LoadMoreBtn';
 import Notiflix from 'notiflix';
+// import SimpleLightbox from "simplelightbox";
+// import "simplelightbox/dist/simple-lightbox.min.css";
 
 const searchForm = document.getElementById('search-form');
 const galleryWrapper = document.querySelector('.gallery');
@@ -10,11 +12,11 @@ const loadMoreBtn = new LoadMoreBtn({
     selector: ".load-more",
     isHidden: true,
 });
-
+    
 searchForm.addEventListener('submit', onFormSubmit);
 loadMoreBtn.button.addEventListener('click', fetchImages);
 
-function onFormSubmit(e) {
+async function onFormSubmit(e) {
     e.preventDefault();
 
     const form = e.currentTarget;
@@ -24,43 +26,81 @@ function onFormSubmit(e) {
 
     imgApiService.searchQuery = value;
 
-    fetchImages();
-    // loadMoreBtn.show();
+try {
+    const images = await imgApiService.getImages();
+    console.log(images);
+
+    if (imgApiService.searchQuery === "") {
+      loadMoreBtn.hide();
+      throw new Error(onError());
+        }
+    else if (images.hits.length === 0) {
+      loadMoreBtn.hide();
+      throw new Error(onError());
+    }
+    else {
+      createMarkupImgList(images.hits);
+      loadMoreBtn.show();
+      loadMoreBtn.enable();
+
+      Notiflix.Notify.success(`"Hooray! We found ${images.totalHits } images."`);
+    }
+  } catch (error) {
+    console.error(error);
+    clearGallery();
+  }
+
 }
 
 function onError(error) {
     Notiflix.Notify.failure("Sorry, there are no images matching your search query. Please try again.");
 }
 
+
 function clearGallery() {
     galleryWrapper.innerHTML = "";
 }
 
-function fetchImages() {
-    loadMoreBtn.disable();
-    return imgApiService.getImages()
-    .then(data => {
-        if (imgApiService.searchQuery === "") {
-            throw new Error(onError());
+async function fetchImages() {
+  loadMoreBtn.disable();
+  try {
+    const images = await imgApiService.getImages();
+    console.log(images);
+
+    const totalImg = images.totalHits;
+    const imgPerPage = images.hits.length;
+    const maxPage = Math.ceil(totalImg / imgPerPage);
+    const currentPage = imgApiService.page - 1;
+
+    if (imgApiService.searchQuery === "") {
+      loadMoreBtn.hide();
+      throw new Error(onError());
         }
-        else if (data.hits.length === 0) {
-            throw new Error(onError());
-        }
-        else {
-            createMarkupImgList(data.hits);
-            loadMoreBtn.show();
-            loadMoreBtn.enable();
-        }
-    })
-        .catch((onError) => {
-         clearGallery();
-        })
+    else if (images.hits.length === 0) {
+      loadMoreBtn.hide();
+      throw new Error(onError());
+    }
+    else if (currentPage === maxPage) {
+      onLastPage();
+      }
+    else {
+      createMarkupImgList(images.hits);
+      loadMoreBtn.show();
+      loadMoreBtn.enable();
+    }
+  } catch (error) {
+    console.error(error);
+    clearGallery();
+  }
 }
+
 
 function createMarkupImgList(image) {
         const markup = image.map(({ webformatURL, largeImageURL, tags, likes, views, comments, downloads }) => {
         return `<div class="photo-card">
-  <img src="${webformatURL}" alt="${tags}" loading="lazy" />
+  <a href="${largeImageURL}">
+  <img class="photo" src="${webformatURL}" alt="${tags}" loading="lazy" />
+  </a>
   <div class="info">
     <p class="info-item">
       <b>Likes</b>${likes}
@@ -79,6 +119,13 @@ function createMarkupImgList(image) {
         })
             .join('')
 
-        return galleryWrapper.insertAdjacentHTML("beforeend", markup);
-        console.log(markup);
+  return galleryWrapper.insertAdjacentHTML("beforeend", markup);
+  // lighbtoxGallery.refresh();
 }
+
+function onLastPage() {
+  loadMoreBtn.hide();
+  Notiflix.Notify.info("We're sorry, but you've reached the end of search results.");
+}
+
+// const lighbtoxGallery = new SimpleLightbox('.gallery a', {captionsData: 'alt', captionDelay: 250, captionPosition: 'bottom', scrollZoom: false});
