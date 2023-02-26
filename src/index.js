@@ -1,8 +1,8 @@
 import ImgApiService from './ImagesApi';
 import LoadMoreBtn from './LoadMoreBtn';
 import Notiflix from 'notiflix';
-// import SimpleLightbox from "simplelightbox";
-// import "simplelightbox/dist/simple-lightbox.min.css";
+import SimpleLightbox from "simplelightbox";
+import "simplelightbox/dist/simple-lightbox.min.css";
 
 const searchForm = document.getElementById('search-form');
 const galleryWrapper = document.querySelector('.gallery');
@@ -12,7 +12,7 @@ const loadMoreBtn = new LoadMoreBtn({
     selector: ".load-more",
     isHidden: true,
 });
-    
+
 searchForm.addEventListener('submit', onFormSubmit);
 loadMoreBtn.button.addEventListener('click', fetchImages);
 
@@ -97,8 +97,8 @@ async function fetchImages() {
 
 function createMarkupImgList(image) {
         const markup = image.map(({ webformatURL, largeImageURL, tags, likes, views, comments, downloads }) => {
-        return `<div class="photo-card">
-  <a href="${largeImageURL}">
+          return `<div class="photo-card">
+        <a href="${largeImageURL}">
   <img class="photo" src="${webformatURL}" alt="${tags}" loading="lazy" />
   </a>
   <div class="info">
@@ -118,9 +118,8 @@ function createMarkupImgList(image) {
     </div>`;
         })
             .join('')
-
   return galleryWrapper.insertAdjacentHTML("beforeend", markup);
-  // lighbtoxGallery.refresh();
+    // lightboxGallery.refresh();
 }
 
 function onLastPage() {
@@ -128,4 +127,6 @@ function onLastPage() {
   Notiflix.Notify.info("We're sorry, but you've reached the end of search results.");
 }
 
-// const lighbtoxGallery = new SimpleLightbox('.gallery a', {captionsData: 'alt', captionDelay: 250, captionPosition: 'bottom', scrollZoom: false});
+// const lightboxGallery = new SimpleLightbox('.gallery a', { captionDelay: 250, scrollZoom: false });
+
+let lightboxGallery = new SimpleLightbox('.gallery a');
