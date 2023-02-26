@@ -12,6 +12,10 @@ body {
     gap: 5px;
     justify-content: center;
     align-items: center;
+
+    position: fixed;
+    top: 0;
+    width: 100%
 }
 
 .form-input {
@@ -35,7 +39,8 @@ body {
 }
 
 .gallery{
-    margin: 20px;
+    margin-top: 70px;
+    padding: 15px;
     display: flex;
     flex-wrap: wrap;
     justify-content: space-evenly;

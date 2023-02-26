@@ -4,6 +4,7 @@ import Notiflix from 'notiflix';
 import SimpleLightbox from "simplelightbox";
 import "simplelightbox/dist/simple-lightbox.min.css";
 
+
 const searchForm = document.getElementById('search-form');
 const galleryWrapper = document.querySelector('.gallery');
 
@@ -12,6 +13,11 @@ const loadMoreBtn = new LoadMoreBtn({
     selector: ".load-more",
     isHidden: true,
 });
+
+    let totalImg = 1;
+    let imgPerPage = 1;
+    let maxPage = 1;
+    let currentPage = 1;
 
 searchForm.addEventListener('submit', onFormSubmit);
 loadMoreBtn.button.addEventListener('click', fetchImages);
@@ -24,20 +30,31 @@ async function onFormSubmit(e) {
     imgApiService.resetPage() 
     clearGallery();
 
-    imgApiService.searchQuery = value;
-
+  imgApiService.searchQuery = value;
+  
+      if (imgApiService.searchQuery === "") {
+        loadMoreBtn.hide();
+        // throw new Error(onError());
+        onError()
+        return
+        }
 try {
     const images = await imgApiService.getImages();
-    console.log(images);
-
-    if (imgApiService.searchQuery === "") {
-      loadMoreBtn.hide();
-      throw new Error(onError());
-        }
-    else if (images.hits.length === 0) {
+  console.log(images);
+  
+    totalImg = images.totalHits;
+    imgPerPage = imgApiService.per_page;
+    maxPage = Math.ceil(totalImg / imgPerPage);
+    currentPage = imgApiService.page - 1;
+  
+    if (images.hits.length === 0) {
       loadMoreBtn.hide();
       throw new Error(onError());
     }
+    else if (currentPage === maxPage) {
+      createMarkupImgList(images.hits);
+      loadMoreBtn.hide();
+      }
     else {
       createMarkupImgList(images.hits);
       loadMoreBtn.show();
@@ -67,10 +84,15 @@ async function fetchImages() {
     const images = await imgApiService.getImages();
     console.log(images);
 
-    const totalImg = images.totalHits;
-    const imgPerPage = images.hits.length;
-    const maxPage = Math.ceil(totalImg / imgPerPage);
-    const currentPage = imgApiService.page - 1;
+    totalImg = images.totalHits;
+    imgPerPage = imgApiService.per_page;
+    maxPage = Math.ceil(totalImg / imgPerPage);
+    currentPage = imgApiService.page - 1;
+
+    // console.log(totalImg);
+    // console.log(imgPerPage);
+    // console.log(maxPage);
+    // console.log(currentPage);
 
     if (imgApiService.searchQuery === "") {
       loadMoreBtn.hide();
@@ -94,32 +116,35 @@ async function fetchImages() {
   }
 }
 
-
 function createMarkupImgList(image) {
         const markup = image.map(({ webformatURL, largeImageURL, tags, likes, views, comments, downloads }) => {
           return `<div class="photo-card">
-        <a href="${largeImageURL}">
-  <img class="photo" src="${webformatURL}" alt="${tags}" loading="lazy" />
-  </a>
+  <a class="photo-card-link" href="${largeImageURL}">
+  <img class="photo" src="${webformatURL}" alt="${tags}" loading="lazy"/></a>
   <div class="info">
     <p class="info-item">
-      <b>Likes</b>${likes}
+      <b>Likes</b>
+      ${likes}
     </p>
     <p class="info-item">
-      <b>Views</b>${views}
+      <b>Views</b>
+      ${views}
     </p>
     <p class="info-item">
-      <b>Comments</b>${comments}
+      <b>Comments</b>
+      ${comments}
     </p>
     <p class="info-item">
-      <b>Downloads</b>${downloads}
+      <b>Downloads</b>
+      ${downloads}
     </p>
   </div>
-    </div>`;
+</div>`;
         })
             .join('')
-  return galleryWrapper.insertAdjacentHTML("beforeend", markup);
-    // lightboxGallery.refresh();
+   galleryWrapper.insertAdjacentHTML("beforeend", markup);
+  lightboxGallery.refresh();
+  smoothlySkroll();
 }
 
 function onLastPage() {
@@ -127,6 +152,19 @@ function onLastPage() {
   Notiflix.Notify.info("We're sorry, but you've reached the end of search results.");
 }
 
-// const lightboxGallery = new SimpleLightbox('.gallery a', { captionDelay: 250, scrollZoom: false });
+let lightboxGallery = new SimpleLightbox('.gallery a', { captionDelay: 250, scrollZoom: false });
 
-let lightboxGallery = new SimpleLightbox('.gallery a');
+function smoothlySkroll() {
+  const { height: cardHeight } = document
+  .querySelector(".gallery")
+  .firstElementChild.getBoundingClientRect();
+
+window.scrollBy({
+  top: cardHeight * 2,
+  behavior: "smooth",
+});
+}
+
+
+
+
